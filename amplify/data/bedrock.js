@@ -1,34 +1,88 @@
+import { util } from '@aws-appsync/utils';
+
 export function request(ctx) {
   const { ingredients = [] } = ctx.args;
-
   const prompt = `Suggest a recipe idea using these ingredients: ${ingredients.join(", ")}.`;
 
   return {
-    resourcePath: `/model/amazon.titan-nova-lite-instruct:001/invoke`,
-    method: "POST",
+    resourcePath: `/model/amazon.nova-lite-v1:0/invoke`,
+    method: 'POST',
     params: {
       headers: {
-        "Content-Type": "application/json",
+        'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        inputText: prompt,      // Titan / Nova Lite käyttää tätä
-        maxTokens: 1000,        // sama kuin Claude max_tokens
-        temperature: 0.7,       // valinnainen: säätää satunnaisuutta
+        messages: [
+          {
+            role: 'user',
+            content: [
+              {
+                text: prompt,
+              },
+            ],
+          },
+        ],
+        inferenceConfig: {
+          maxNewTokens: 1000,
+          temperature: 0.7,
+        },
       }),
     },
   };
 }
 
 export function response(ctx) {
-  const parsedBody = JSON.parse(ctx.result.body);
-
-  // Titan / Nova Lite palauttaa usein tämän muotoisesti
-  const res = {
-    body: parsedBody.outputText || "", // outputText sisältää mallin vastauksen
-  };
-
-  return res;
+  if (ctx.error) {
+    util.error(ctx.error.message, ctx.error.type);
+  }
+  
+  const res = JSON.parse(ctx.result.body);
+  
+  // Varmistetaan Novan vastausrakenne
+  if (res.output && res.output.message && res.output.message.content) {
+    return res.output.message.content[0].text;
+  }
+  
+  return 'Virhe: Tekoäly ei palauttanut vastausta oikeassa muodossa.';
 }
+
+
+// export function request(ctx) {
+//   const { ingredients = [] } = ctx.args;
+
+//   const prompt = `Suggest a recipe idea using these ingredients: ${ingredients.join(", ")}.`;
+
+//   return {
+//     resourcePath: `/model/amazon.titan-nova-lite-instruct:001/invoke`,
+//     method: "POST",
+//     params: {
+//       headers: {
+//         "Content-Type": "application/json",
+//       },
+//       body: JSON.stringify({
+//         inputText: prompt,      // Titan / Nova Lite käyttää tätä
+//         maxTokens: 1000,        // sama kuin Claude max_tokens
+//         temperature: 0.7,       // valinnainen: säätää satunnaisuutta
+//       }),
+//     },
+//   };
+// }
+
+// export function response(ctx) {
+//   const parsedBody = JSON.parse(ctx.result.body);
+
+//   // Titan / Nova Lite palauttaa usein tämän muotoisesti
+//   const res = {
+//     body: parsedBody.outputText || "", // outputText sisältää mallin vastauksen
+//   };
+
+//   return res;
+// }
+
+
+
+
+
 
 // export function request(ctx) {
 //     const { ingredients = [] } = ctx.args;
