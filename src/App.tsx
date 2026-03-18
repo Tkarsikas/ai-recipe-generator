@@ -1,4 +1,4 @@
-import { FormEvent, useState } from "react";
+import { type SyntheticEvent, useState } from "react";
 import { Loader, Placeholder } from "@aws-amplify/ui-react";
 import "./App.css";
 import { Amplify } from "aws-amplify";
@@ -13,7 +13,7 @@ const amplifyClient = generateClient<Schema>({
 function App() {
  const [result, setResult] = useState<string>("");
  const [loading, setLoading] = useState(false);
- const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
+ const onSubmit = async (event: SyntheticEvent<HTMLFormElement>) => {
  event.preventDefault();
  setLoading(true);
  try {
