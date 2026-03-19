@@ -2,51 +2,47 @@ import { util } from '@aws-appsync/utils';
 
 export function request(ctx) {
   const { ingredients = [] } = ctx.args;
+
   const prompt = `Suggest a recipe idea using these ingredients: ${ingredients.join(", ")}.`;
 
   return {
     resourcePath: `/model/amazon.nova-lite-v1:0/invoke`,
-    method: 'POST',
+    method: "POST",
     params: {
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
-      body: JSON.stringify({
-        messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                text: prompt,
-              },
-            ],
-          },
-        ],
-        inferenceConfig: {
-          maxNewTokens: 1000,
+      body: {
+        inputText: prompt,          // 🔥 tärkein muutos
+        textGenerationConfig: {
+          maxTokenCount: 1000,
           temperature: 0.7,
         },
-      }),
+      },
     },
   };
 }
 
 export function response(ctx) {
+console.log("RAW RESPONSE:", ctx.result.body);
   if (ctx.error) {
-    util.error(ctx.error.message, ctx.error.type);
+    return {
+      body: "",
+      error: ctx.error.message,
+    };
   }
-  
-  const res = JSON.parse(ctx.result.body);
-  
-  // Varmistetaan Novan vastausrakenne
-  if (res.output && res.output.message && res.output.message.content) {
-    return res.output.message.content[0].text;
-  }
-  
-  return 'Virhe: Tekoäly ei palauttanut vastausta oikeassa muodossa.';
+
+  const res = JSON.parse(ctx.result.body); // 🔥 fix
+
+  const text =
+    res?.results?.[0]?.outputText ||
+    res?.outputText ||
+    "";
+
+  return {
+    body: text,
+  };
 }
-
-
 // export function request(ctx) {
 //   const { ingredients = [] } = ctx.args;
 
